@@ -16,7 +16,7 @@ from pathlib import Path
 import pandas as pd
 import json
 import sys
-
+import pprint
 # ---------------------------
 # Lookup Maps
 # ---------------------------
@@ -92,7 +92,7 @@ class XDFParser:
             for k, v in value.items():
                 self.json_rows.append({
                     "ObjectType": object_type,
-                    "Name": name,
+                    "Title": name,
                     "Parent": parent,
                     "Field": field_name,
                     "Key": k,
@@ -102,7 +102,7 @@ class XDFParser:
             for i, v in enumerate(value):
                 self.json_rows.append({
                     "ObjectType": object_type,
-                    "Name": name,
+                    "Title": name,
                     "Parent": parent,
                     "Field": field_name,
                     "Key": i,
@@ -126,22 +126,26 @@ class XDFParser:
 
             tbl = {
                 "ObjectType": "Table",
-                "Name": t.findtext("title", "Unnamed Table"),
-                "Address": t.findtext("address"),
+                "Title": t.findtext("title", "Unnamed Table"),
+                "UniqueID": t.get("uniqueid", "unknown"),
+
+                "Flags": t.findtext("flags", "0x0"),
+
+                #"Address": t.findtext("address"),
                 "Size": t.findtext("size"),
-                "Datatype": t.findtext("datatype"),
+                #"Datatype": t.findtext("datatype"),
                 "Description": t.findtext("description"),
-                "Units": t.findtext("units"),
-                "UnitTypeCode": raw_unit,
-                "UnitType": norm_unit,
-                "OutputTypeCode": raw_out,
-                "OutputType": norm_out,
-                "Math": _extract_math(t),
-                "ElementSizeBits": embedded["mmedelementsizebits"],
-                "MajorStrideBits": embedded["mmedmajorstridebits"],
-                "MinorStrideBits": embedded["mmedminorstridebits"],
-                "Labels": None,
-                "DALINK": None,
+                #"Units": t.findtext("units"),
+                #"UnitTypeCode": raw_unit,
+                #"UnitType": norm_unit,
+                #"OutputTypeCode": raw_out,
+                #"OutputType": norm_out,
+                #"Math": _extract_math(t),
+                "Embedded.ElementSizeBits": embedded["mmedelementsizebits"],
+                "Embedded.MajorStrideBits": embedded["mmedmajorstridebits"],
+                "Embedded.MinorStrideBits": embedded["mmedminorstridebits"],
+                #"Labels": None,
+                #"DALINK": None,
                 "Parent": None,
             }
             xdf_def["Tables"].append(tbl)
@@ -158,27 +162,37 @@ class XDFParser:
 
                 axis = {
                     "ObjectType": "Axis",
-                    "Name": ax.get("id", "unknown"),
+                    "ID": ax.get("id", "unknown"),
+                    "UniqueID": ax.get("uniqueid", "unknown"),
                     "Parent": t.findtext("title"),
+                    "Title": ax.findtext("title"),
+                    "ParentID": t.get("uniqueid","No Parent"),
+                    "Address": ax.findtext("address"),
                     "Units": ax.findtext("units"),
                     "UnitTypeCode": raw_unit_ax,
                     "UnitType": norm_unit_ax,
                     "OutputTypeCode": raw_out_ax,
                     "OutputType": norm_out_ax,
                     "Math": _extract_math(ax),
-                    "ElementSizeBits": embedded_ax["mmedelementsizebits"],
-                    "MajorStrideBits": embedded_ax["mmedmajorstridebits"],
-                    "MinorStrideBits": embedded_ax["mmedminorstridebits"],
+                    "IndexCount": ax.findtext("indexcount"),
+                    "Min": ax.findtext("min"),
+                    "Max": ax.findtext("max"),
+                    "IndexSizeBits": ax.findtext("indexsizebits"),
+                    "DecimalPlace": ax.findtext("decimalpl"),
+                    "DataType": ax.findtext("datatype"),
+                    "Embedded.ElementSizeBits": embedded_ax["mmedelementsizebits"],
+                    "Embedded.MajorStrideBits": embedded_ax["mmedmajorstridebits"],
+                    "Embedded.MinorStrideBits": embedded_ax["mmedminorstridebits"],
                     "Labels": serialize_field(labels),
                     "DALINK": serialize_field(dalinks),
-                }
+               }
                 xdf_def["Axes"].append(axis)
                 xdf_def["EmbeddedData"].append(axis.copy())
 
                 if labels:
-                    self.add_json_entries("Axis", axis["Name"], axis["Parent"], "Labels", labels)
+                    self.add_json_entries("Axis", axis["ID"], axis["Parent"], "Labels", labels)
                 if dalinks:
-                    self.add_json_entries("Axis", axis["Name"], axis["Parent"], "DALINK", dalinks)
+                    self.add_json_entries("Axis", axis["ID"], axis["Parent"], "DALINK", dalinks)
 
         # Scalars
         for s in self.root.findall(".//XDFSCALAR"):
@@ -187,7 +201,8 @@ class XDFParser:
             raw_out, norm_out = normalize_outputtype(s.findtext("outputtype"))
             scalar = {
                 "ObjectType": "Scalar",
-                "Name": s.findtext("title", "Unnamed Scalar"),
+                "UniqueID": s.get("uniqueid", "unknown"),
+                "Title": s.findtext("title", "Unnamed Scalar"),
                 "Address": s.findtext("address"),
                 "Datatype": s.findtext("datatype"),
                 "Description": s.findtext("description"),
@@ -197,9 +212,9 @@ class XDFParser:
                 "OutputTypeCode": raw_out,
                 "OutputType": norm_out,
                 "Math": _extract_math(s),
-                "ElementSizeBits": embedded["mmedelementsizebits"],
-                "MajorStrideBits": embedded["mmedmajorstridebits"],
-                "MinorStrideBits": embedded["mmedminorstridebits"],
+                "Embedded.ElementSizeBits": embedded["mmedelementsizebits"],
+                "Embedded.MajorStrideBits": embedded["mmedmajorstridebits"],
+                "Embedded.MinorStrideBits": embedded["mmedminorstridebits"],
                 "Labels": None,
                 "DALINK": None,
                 "Parent": None,
@@ -214,8 +229,9 @@ class XDFParser:
             raw_unit, norm_unit = normalize_unittype(c.findtext("unittype"))
             raw_out, norm_out = normalize_outputtype(c.findtext("outputtype"))
             const = {
+                "UniqueID": c.get("uniqueid", "unknown"),
                 "ObjectType": "Constant",
-                "Name": c.findtext("title", "Unnamed Constant"),
+                "Title": c.findtext("title", "Unnamed Constant"),
                 "Address": c.findtext("address"),
                 "Datatype": c.findtext("datatype"),
                 "Description": c.findtext("description"),
@@ -225,14 +241,17 @@ class XDFParser:
                 "OutputTypeCode": raw_out,
                 "OutputType": norm_out,
                 "Math": _extract_math(c),
-                "ElementSizeBits": embedded["mmedelementsizebits"],
-                "MajorStrideBits": embedded["mmedmajorstridebits"],
-                "MinorStrideBits": embedded["mmedminorstridebits"],
+                "Embedded.ElementSizeBits": embedded["mmedelementsizebits"],
+                "Embedded.MajorStrideBits": embedded["mmedmajorstridebits"],
+                "Embedded.MinorStrideBits": embedded["mmedminorstridebits"],
                 "Labels": None,
                 "DALINK": None,
                 "Parent": None,
-                "Size": None,
+                "Size": "1",
             }
+            if dalinks:
+                    self.add_json_entries("Constant", const["Title"], const["Parent"], "DALINK", dalinks)
+
             xdf_def["Constants"].append(const)
             xdf_def["EmbeddedData"].append(const.copy())
 
@@ -263,23 +282,23 @@ class XDFParser:
 
             # Clean per-sheet schemas
             write_sheet("Tables", xdf_def["Tables"], [
-                "Name","Address","Size","Units","UnitType","OutputType",
-                "Description","Math","ElementSizeBits","MajorStrideBits","MinorStrideBits"
+                "Title","Size",
+                "Description","Embedded.ElementSizeBits","Embedded.MajorStrideBits","Embedded.MinorStrideBits"
             ])
 
             write_sheet("Scalars", xdf_def["Scalars"], [
-                "Name","Address","Datatype","Units","UnitType","OutputType",
-                "Description","Math","ElementSizeBits","MajorStrideBits","MinorStrideBits"
+                "Title","Address","Datatype","Units","UnitType","OutputType",
+                "Description","Math","Embedded.ElementSizeBits","Embedded.MajorStrideBits","Embedded.MinorStrideBits"
             ])
 
             write_sheet("Constants", xdf_def["Constants"], [
-                "Name","Address","Datatype","Units","UnitType","OutputType",
-                "Description","Math","ElementSizeBits","MajorStrideBits","MinorStrideBits"
+                "Title","Address","Datatype","Units","UnitType","OutputType",
+                "Description","Math","Embedded.ElementSizeBits","Embedded.MajorStrideBits","Embedded.MinorStrideBits"
             ])
 
             write_sheet("Axes", xdf_def["Axes"], [
-                "Parent","Name","Units","UnitType","OutputType","Math",
-                "ElementSizeBits","MajorStrideBits","MinorStrideBits","Labels","DALINK"
+                "Parent","Title","Units","UnitType","OutputType","Math",
+                "Embedded.ElementSizeBits","Embedded.MajorStrideBits","Embedded.MinorStrideBits","Labels","DALINK"
             ])
 
             # EmbeddedData: keep full superset for auditing
@@ -312,7 +331,7 @@ def main():
 
     parser = XDFParser(infile)
     xdf_def = parser.parse()
-
+    #pprint.pprint(xdf_def)
     # Main workbook
     outfile_main = infile.with_suffix(".parsed.xlsx")
     parser.to_excel(xdf_def, outfile_main)
