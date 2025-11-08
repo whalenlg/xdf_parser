@@ -1,0 +1,6 @@
+python3 xdf_merge.py input_xdf/Carpokes28PinV3.xdf input/28.map bin_images/28PIN_DME_PERFORMANCE.bin >/tmp/logV328
+python3 xdf_merge.py input_xdf/Carpokes24PinV3.xdf input/24.map bin_images/24PIN_DME_PERFORMANCE.bin >/tmp/logV324
+python3 xdf_merge.py input_xdf/Carpokes28PinV1.xdf input/28.map bin_images/28PIN_DME_PERFORMANCE.bin >/tmp/logV128
+python3 xdf_merge.py input_xdf/Carpokes24PinV1.xdf input/24.map bin_images/24PIN_DME_PERFORMANCE.bin >/tmp/logV124
+python3 xdf_merge.py input_xdf/28pin_DME_limited_cunningham.xdf inputs/28.map bin_images/28PIN_DME_PERFORMANCE.bin >/tmp/logC28
+python3 xdf_merge.py input_xdf/24pin_DME_limited_cunningham.xdf inputs/24.map bin_images/24PIN_DME_PERFORMANCE.bin >/tmp/logC24
