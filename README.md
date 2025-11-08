@@ -1,156 +1,59 @@
-# xdf_parser
-Python Based Parser for TunerPro .xdf files for 944 Turbo DME EPROMS
-# XDF → Excel + JSON Exporter
+# XDF Map Export & Merge Tool
 
-A Python tool to parse **TunerPro XDF** definition files and export them into **Excel** and **JSON** formats.  
-Designed for **tuning engineers** and **data analysts** who want clean tables for review, and structured JSON for scripting.  
+[![Python 3](https://img.shields.io/badge/python-3.x-blue.svg)](#)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](#)
+[![TunerPro Compatible](https://img.shields.io/badge/TunerPro-XDF%20Supported-orange.svg)](#)
 
----
-
-## ✨ Features
-
-- ✅ Parses **Tables, Scalars, Constants, Axes**  
-- ✅ Extracts:  
-  - Units + UnitTypes (normalized)  
-  - OutputTypes (normalized)  
-  - Datatypes + Descriptions  
-  - Math functions  
-  - Memory layout (`ElementSizeBits`, `MajorStrideBits`, `MinorStrideBits`)  
-  - Axis Labels + DALINKs  
-- ✅ Excel Export:  
-  - **Clean per-sheet schemas** (no empty clutter)  
-  - **EmbeddedData** sheet → raw superset audit dump  
-  - Pretty-printed JSON fields (wrapped + auto row height)  
-- ✅ JSON Export:  
-  - `<xdf>.json.xlsx` → Flattened JSON (Axis Labels, DALINKs, etc.)  
-  - `<xdf>.embedded.json` → Full EmbeddedData raw dump  
+A beginner-friendly tool that helps you extract, inspect, and rebuild **TunerPro XDF map files** using data from **ECU BIN files**. It makes ECU maps easier to understand, edit, and compare by exporting them to **Excel and JSON**, and can also **generate new XDF maps when missing**.
 
 ---
 
-## 📦 Installation
+## Features
+
+✅ Extract maps from `.xdf` and `.bin`  
+✅ Convert table data into **Excel spreadsheets**  
+✅ Export metadata and scaling info into **JSON**  
+✅ Detect missing maps and **auto-add them back to the XDF**  
+✅ Generate a **merged `.xdf`** ready for TunerPro  
+✅ Helps reverse-engineer or improve incomplete map definitions
+
+---
+
+## Inputs
+
+| File Type | Description |
+|----------|-------------|
+| `.xdf` | TunerPro definition file |
+| `.map` | Lookup/address metadata for tables |
+| `.bin` | ECU firmware / calibration image |
+
+---
+
+## Outputs
+
+### `output/<name>/`
+
+| File | Description |
+|------|-------------|
+| `*.parsed.xlsx` | Tables exported for editing/viewing |
+| `*.json.xlsx` | Metadata / labels / formulas |
+| `*.embedded.json` | Raw extracted map structures |
+| `*.all_maps.json` | Extracted data from BIN maps |
+
+### `output_xdf/<name>/`
+| File | Description |
+|------|-------------|
+| `*.merged.xdf` | Final XDF (with added/missing tables restored) |
+
+> Open the **merged XDF** directly in **TunerPro**.
+
+---
+
+## Installation
+
+Requires **Python 3**.
 
 ```bash
 pip install pandas xlsxwriter
-```
 
----
 
-## 🚀 Usage
-
-```bash
-python xdf_to_excel.py path/to/file.xdf
-```
-
----
-
-## 📂 Outputs
-
-For an input file `28pin DME limited.xdf`, you will get:
-
-- `28pin DME limited.parsed.xlsx` → main workbook  
-- `28pin DME limited.json.xlsx` → JSON breakdown  
-- `28pin DME limited.embedded.json` → raw EmbeddedData JSON  
-
----
-
-## 📊 Example Excel (Tables Sheet)
-
-| Name      | Address | Size  | Units | UnitType | OutputType | Description   | Math   | ElementSizeBits | MajorStrideBits | MinorStrideBits |
-|-----------|---------|-------|-------|----------|------------|---------------|--------|-----------------|-----------------|-----------------|
-| Fuel Map  | 0x1234  | 16x16 | ms    | Time     | Unsigned   | Main fuel map | X*0.01 | 16              | -32             | 0               |
-
----
-
-## 📊 Example Excel (Axes Sheet)
-
-| Parent   | Name | Units | UnitType | OutputType | Math | ElementSizeBits | MajorStrideBits | MinorStrideBits | Labels                                                                 | DALINK        |
-|----------|------|-------|----------|------------|------|-----------------|-----------------|-----------------|------------------------------------------------------------------------|---------------|
-| Fuel Map | Y    | FQS   | Generic  | Unsigned   | X    | 16              | -32             | 0               | {<br>  "0": "Stock & 4",<br>  "1": "1 & 5",<br>  "2": "2 & 6",<br>  "3": "3 & 7"<br>} | [<br>  "0",<br>  "2"<br>] |
-
----
-
-## 📜 Example JSON (EmbeddedData Dump)
-
-```json
-[
-  {
-    "ObjectType": "Table",
-    "Name": "Fuel Map",
-    "Address": "0x1234",
-    "Size": "16x16",
-    "Units": "ms",
-    "UnitType": "Time",
-    "OutputType": "Unsigned",
-    "Math": "X*0.01",
-    "ElementSizeBits": 16,
-    "MajorStrideBits": -32,
-    "MinorStrideBits": 0
-  },
-  {
-    "ObjectType": "Axis",
-    "Name": "Y",
-    "Parent": "Fuel Map",
-    "Units": "FQS",
-    "UnitType": "Generic",
-    "OutputType": "Unsigned",
-    "Math": "X",
-    "ElementSizeBits": 16,
-    "MajorStrideBits": -32,
-    "MinorStrideBits": 0,
-    "Labels": {
-      "0": "Stock & 4",
-      "1": "1 & 5",
-      "2": "2 & 6",
-      "3": "3 & 7"
-    },
-    "DALINK": ["0", "2"]
-  }
-]
-```
-
----
-
-## 🛠️ Requirements
-
-- Python 3.8+  
-- pandas  
-- xlsxwriter  
-
----
-
-## 🔧 Advanced Usage
-
-Since you also get **`.embedded.json`**, you can script against the raw data.
-
-### Example: Load EmbeddedData JSON in Python
-
-```python
-import json
-
-with open("28pin DME limited.embedded.json", "r", encoding="utf-8") as f:
-    embedded = json.load(f)
-
-# Example: Get all Scalars
-scalars = [obj for obj in embedded if obj["ObjectType"] == "Scalar"]
-
-# Example: Get all Axis Labels for a table
-axis_labels = {
-    obj["Name"]: obj["Labels"]
-    for obj in embedded
-    if obj["ObjectType"] == "Axis" and obj["Parent"] == "Fuel Map"
-}
-
-print("Scalars:", scalars)
-print("Fuel Map Axes:", axis_labels)
-```
-
-### Example: Convert Scalars into a pandas DataFrame
-
-```python
-import pandas as pd
-
-df = pd.DataFrame([obj for obj in embedded if obj["ObjectType"] == "Scalar"])
-print(df[["Name", "Address", "Datatype", "Units", "Math"]])
-```
-
-✅ This way you can use the JSON directly for scripting, data validation, or exporting into other tools.
