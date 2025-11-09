@@ -1,8 +1,0 @@
-#!/bin/bash
-srec_cat 24PIN_86DME.bin -binary -o 24PIN_86DME.hex  -intel
-srec_cat 24PIN_89DME.bin -binary -o 24PIN_89DME.hex  -intel
-srec_cat 24PIN_DME_FACTORY_1267355235.bin -binary -o 24PIN_DME_FACTORY_1267355235.hex  -intel
-srec_cat 24PIN_DME_PERFORMANCE.bin -binary -o 24PIN_DME_PERFORMANCE.hex  -intel
-srec_cat 28PIN_DME_PERFORMANCE.bin -binary -o 28PIN_DME_PERFORMANCE.hex  -intel
-srec_cat 24PIN_Porsche951DME.bin -binary -o 24PIN_Porsche951DME.hex  -intel
-srec_cat 28PIN_89DME_951.bin -binary -o 28PIN_89DME_951.hex  -intel
