@@ -970,11 +970,11 @@ def main():
     print("# of Maps",len(data)-1)
     print("Start address of map",data[0]["Address"])
     # Extracte Data JSON
-    print(f"✅ JSON Basic Map file written to {json_map_file_name}")
+    print(f"JSON Basic Map file written to {json_map_file_name}")
 
     out_all_maps_file = outdirname+"/"+basename+".all_maps.json"
 
-    print(f"✅ All JSON Maps, Values and Headers written to {out_all_maps_file}")
+    print(f"All JSON Maps, Values and Headers written to {out_all_maps_file}")
 
     out_def = merge_data(bin_file, json_map_file_name)
 
@@ -1009,22 +1009,22 @@ def main():
     # Main workbook
     outfile_main = outdirname+"/"+basename+".parsed.xlsx"
     parser.to_excel(xdf_def_merge, outfile_main)
-    print(f"✅ Exported main workbook: {outfile_main}")
+    print(f"Exported main workbook: {outfile_main}")
 
     # JSON workbook
     outfile_json = outdirname+"/"+basename+".json.xlsx"
     parser.to_json_excel(outfile_json)
-    print(f"✅ Exported JSON breakdown: {outfile_json}")
+    print(f"Exported JSON breakdown: {outfile_json}")
 
     # Embedded JSON
     outfile_embedded_json = outdirname+"/"+basename+"embedded.json"
     parser.to_embedded_json(xdf_def_merge, outfile_embedded_json)
-    print(f"✅ Exported EmbeddedData JSON: {outfile_embedded_json}")
+    print(f"Exported EmbeddedData JSON: {outfile_embedded_json}")
 
     # Merged XDF 
     outfile_merged_xdf = outxdfdirname+"/"+basename+".merged.xdf"
     json_to_xdf(outfile_embedded_json,outfile_merged_xdf)
-    print(f"✅ XDF file written to {outfile_merged_xdf}")
+    print(f"XDF file written to {outfile_merged_xdf}")
     
 if __name__ == "__main__":
     main()
